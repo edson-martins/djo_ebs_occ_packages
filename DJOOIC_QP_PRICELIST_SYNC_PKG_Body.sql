@@ -37,7 +37,7 @@ WHERE     1=1
        AND price_list.price_list_name = price_book.price_list
        AND price_list.item_number = price_book.part_number
        AND price_list.country = price_book.country
-       and product_id is not null and price_book.account_number != ''647123'' and price_book.price_list != ''LIST1 PL'' and price_book.country is not null order by occ_price_list_name,item_number offset nvl(('
+       and price_book.product_id is not null and price_book.account_number != ''647123'' and price_book.price_list != ''LIST1 PL'' and price_book.country is not null order by occ_price_list_name,item_number offset nvl(('
                    || p_counter
                    || '-1),0) * '
                    || p_limit
