@@ -891,7 +891,7 @@ OPEN v_refcur FOR v_query;
     party_site_name ,
     third_party_accounts ,
     addr.site_use_id,
-    payment_terms_id,
+    payment_terms,
     SITE_PAYMENT_METHOD
 FROM
  xxdjo.djoar_ebs_cust_acct_addr addr
