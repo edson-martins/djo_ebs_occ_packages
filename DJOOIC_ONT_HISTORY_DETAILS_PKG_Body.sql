@@ -737,7 +737,7 @@ WHERE     1 = 1
     v_query := 'SELECT distinct
     acct.account_id,
     acct.organization_name||'' - ''||acct.account_number,
-    acct.payment_terms_id,
+    acct.payment_terms,
     acct.frieght_terms,
     acct.account_number,
     acct.acc_payment_method,
