@@ -466,7 +466,127 @@ WHERE     1 = 1
        AND fl_ship.view_application_id(+) = 3
        AND UPPER (ol.lookup_type) = 'FREIGHT_TERMS'
        AND ol.enabled_flag = 'Y'
+       AND ooh.freight_terms_code IS NOT NULL
        AND UPPER (ol.lookup_code) = UPPER (ooh.freight_terms_code)
+       AND ooh.payment_term_id(+) = trm.term_id
+       AND ooh.order_source_id(+) = os.order_source_id
+       --
+       AND hcar.role_type(+) = 'CONTACT'
+       AND hcar.party_id = hr.party_id(+)
+       AND hr.relationship_code(+) = 'CONTACT_OF'
+       AND hr.subject_id = sold_party.party_id(+)
+       AND hcar.cust_account_id(+) = hca_ship.cust_account_id 
+       AND hcar.cust_account_role_id (+) = ooh.sold_to_contact_id--2042156 
+       --
+       AND hcp.owner_table_id(+)= hcar.party_id
+       AND hcp.owner_table_name(+) = 'HZ_PARTIES' 
+       AND hcp.contact_point_type(+) = 'EMAIL'
+  UNION
+       SELECT ooh.header_id                  order_id,
+       ooh.order_number               ebs_order_number,
+       ooh.orig_sys_document_ref      alt_order_number,
+       ooh.ordered_date               ordered_date,
+       ooh.booked_date                booked_date,
+       ooh.flow_status_code           order_status,
+       ooh.cust_po_number             po_number,
+       ooh.order_number,
+       hp_bill.party_name             Bill_Party_Name,
+       hp_ship.party_name             Ship_Party_Name,
+       hp_bill.email_address          Bill_customer_email,
+       hp_ship.email_address          Ship_customer_email,
+          hl_ship.address1
+       || DECODE (hl_ship.address2, NULL, '', CHR (10))
+       || hl_ship.address2
+       || DECODE (hl_ship.address3, NULL, '', CHR (10))
+       || hl_ship.address3
+       || DECODE (hl_ship.address4, NULL, '', CHR (10))
+       || hl_ship.address4
+       || DECODE (hl_ship.city, NULL, '', CHR (10))
+       || hl_ship.city
+       || DECODE (hl_ship.state, NULL, '', ',')
+       || hl_ship.state
+       || DECODE (hl_ship.postal_code, '', ',')
+       || hl_ship.postal_code         ship_to_address,
+          hl_bill.address1
+       || DECODE (hl_bill.address2, NULL, '', CHR (10))
+       || hl_bill.address2
+       || DECODE (hl_bill.address3, NULL, '', CHR (10))
+       || hl_bill.address3
+       || DECODE (hl_bill.address4, NULL, '', CHR (10))
+       || hl_bill.address4
+       || DECODE (hl_bill.city, NULL, '', CHR (10))
+       || hl_bill.city
+       || DECODE (hl_bill.state, NULL, '', ',')
+       || hl_bill.state
+       || DECODE (hl_bill.postal_code, '', ',')
+       || hl_bill.postal_code         bill_to_address,
+       fl_ship.meaning                shipping_method,
+       ooh.request_date               requested_delivery_date,
+       ooh.shipment_priority_code     shipment_priority,
+       NULL                           freight_terms,
+       ooh.drop_ship_flag             drop_shipment,
+       ooh.transactional_curr_code    currency_code,
+       trm.name                       payment_terms,
+       ooh.cust_po_number             purchase_order_number,
+       ooh.payment_type_code          payment_method,
+       ooh.attribute4                 third_party_account,
+       ooh.attribute6                 one_time_third_party_account,
+       NVL (apps.oe_totals_grp.get_order_total (ooh.header_id, NULL, 'ALL'),
+            0)                        order_total,
+       os.name                        order_source,
+       ooh.sold_to_contact_id,
+       mp.organization_code,
+       ooh.fob_point_code,
+       ooh.freight_terms_code,
+       --ooh.sold_to_contact_id,
+       --
+       sold_party.person_first_name contact_first_name,
+       sold_party.person_last_name contact_last_name,
+       sold_party.email_address contact_email_address,
+       hcp.email_address
+  FROM oe_order_headers_all    ooh, 
+       hz_cust_site_uses_all   hcs_ship,
+       hz_cust_acct_sites_all  hca_ship,
+       hz_party_sites          hps_ship,
+       hz_parties              hp_ship,
+       hz_locations            hl_ship,
+       hz_cust_site_uses_all   hcs_bill,
+       hz_cust_acct_sites_all  hca_bill,
+       hz_party_sites          hps_bill,
+       hz_parties              hp_bill,
+       hz_locations            hl_bill,
+       mtl_parameters          mp,
+       --
+       fnd_lookup_values_vl    fl_ship,
+       oe_lookups              ol,
+       apps.ra_terms           trm,
+       apps.oe_order_sources   os,
+       --
+       apps.hz_cust_account_roles hcar, 
+       apps.hz_relationships hr, 
+       apps.hz_parties sold_party,
+       apps.hz_contact_points hcp
+WHERE     1 = 1
+       AND ooh.header_id = p_header_id -- 1590800
+       AND ooh.ship_to_org_id = hcs_ship.site_use_id
+       AND hcs_ship.cust_acct_site_id = hca_ship.cust_acct_site_id
+       AND hca_ship.party_site_id = hps_ship.party_site_id
+       AND hps_ship.party_id = hp_ship.party_id
+       AND hps_ship.location_id = hl_ship.location_id
+       AND ooh.invoice_to_org_id = hcs_bill.site_use_id
+       AND hcs_bill.cust_acct_site_id = hca_bill.cust_acct_site_id
+       AND hca_bill.party_site_id = hps_bill.party_site_id
+       AND hps_bill.party_id = hp_bill.party_id
+       AND hps_bill.location_id = hl_bill.location_id
+       AND mp.organization_id(+) = ooh.ship_from_org_id
+       --
+       AND fl_ship.enabled_flag(+) = 'Y'
+       AND fl_ship.lookup_type(+) = 'SHIP_METHOD'
+       AND fl_ship.lookup_code(+) = ooh.shipping_method_code
+       AND fl_ship.view_application_id(+) = 3
+       AND UPPER (ol.lookup_type) = 'FREIGHT_TERMS'
+       AND ol.enabled_flag = 'Y'
+       AND ooh.freight_terms_code IS NULL
        AND ooh.payment_term_id(+) = trm.term_id
        AND ooh.order_source_id(+) = os.order_source_id
        --
