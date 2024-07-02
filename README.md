@@ -1,4 +1,4 @@
-# Integration Repository with Oracle Integration from DJO Project
+# Repository with Oracle Integration from DJO Project
 
 Contains the OIC integrations as well as any EBS SQL Packages used
 
